@@ -1,5 +1,5 @@
 # Pirate Jane
-A bot for the [Unturned Official Discord server](discord.gg/unturned "Unturned Official")
+A bot for the [Unturned Official Discord server](http://discord.gg/unturned "Unturned Official")
 ######  I'm not very good at coding, so pls no make fun of me, k thx. Although any feedback would be nice.
 
 ## Info about the bot
