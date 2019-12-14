@@ -2,12 +2,17 @@ module.exports = {
 	name: 'mute',
     description: 'Mute a user for doing the bad',
     aliases: ['mute'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
     
         if(!message.member.hasPermission("MANAGE_MESSAGES")) {
             message.react('592017668777967616')
             return;
         }
+
+
+        if(shitself == true) {
+            return message.channel.send(`Database is on the fritz. The command will not work until the database is back up.`)
+          }
 
         message.delete()
         const userMention = message.mentions.users.first();
@@ -32,8 +37,25 @@ module.exports = {
 
         var time;
         if(!stringCheck[1]) { //check if time
-            //if no time, don't bother adding them to the database
-            time = 'Until the end of time'
+            //if no time, add them to the database with the unban time set to 30 years ahead
+            time = 'the end of time.'
+            pool.getConnection(function(err, conn) {
+                var sql = `SELECT * FROM mutes WHERE id=?;`;
+                conn.query(sql,[member.id], function (err, results) {
+                conn.release()
+                if(!results[0]) {
+                    pool.getConnection(function(err, conn) {
+                    var sql = `INSERT INTO mutes (guild, id, time) VALUES (?, ?, 2545065496)`;
+                    conn.query(sql,[message.guild.id, member.id], function (err, results) {
+                    conn.release()
+                    })
+                })} else {
+                    pool.getConnection(function(err, conn) {
+                        var sql = `UPDATE mutes SET guild =?, time ='2545065496' WHERE id =?`;
+                        conn.query(sql, [message.guild.id, member.id], function (err, results) {
+                        conn.release()
+                        })
+                    })}})})
         } else {
             //if time, add them to the database, if they exist, update their time instead
             var str;
@@ -64,12 +86,12 @@ module.exports = {
         member.addRole(muted).catch(console.error);
         const embed = new Discord.RichEmbed()
         embed.setTitle(`Mute #` + counter[0].amount)
-        embed.setColor(0xffff94)
+        embed.setColor(0xFFA500)
         embed.setTimestamp()
         embed.addField('User', member.user.tag + ' (' + member.id + ')', false)
         embed.addField('Reason', reason, false)
         embed.addField('Moderator', message.author.tag + ' (' + message.author.id + ')', false)
-        embed.addField('Channel', message.channel, false)
+        embed.addField('Channel', '<#' + message.channel.id + '>', false)
         embed.addField('Muted until', time, false)
         mutes.send({embed});
         member.send({embed}).catch(console.error);

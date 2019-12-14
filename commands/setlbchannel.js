@@ -2,12 +2,18 @@ module.exports = {
 	name: 'setlbchannel',
     description: 'Set leaderboard channel. (Updates every hour with new leaderboard)',
     aliases: ['setlbchan'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
         if(!message.member.hasPermission("MANAGE_MESSAGES")) {
             message.react('592017668777967616')
             return;
           }
+          
+
+          if(shitself == true) {
+            return message.channel.send(`Database is on the fritz. The command will not work until the database is back up.`)
+          }
+
     var msg;
     message.delete()
 

@@ -4,33 +4,71 @@ const client = new Discord.Client();
 const config = require("./config");
 const pool = require('./database/pool');
 const prefix = config.prefix;
+const func = require('./functions');
 const art = `       .___,   
     ___('v')___
     \`"-\._./-"'
         ^ ^    
 `
 
+//shitself is for when the bot is unable to connect to the db. If it cannot, then it will skip some functions that require a db (ie lvls)
+let shitself;
+
+pool.getConnection(function(err, conn) {
+  if(err) {
+    shitself = true;
+    console.log('true')
+  } else {
+    shitself = false;
+    console.log('false')
+  }
+
+  if(shitself == true) {
+    setInterval(shitSelfChecker, 3600000); //3600000 = 1 hour
+
+    function shitSelfChecker() {
+
+      process.exit()
+    }
+  let deathIf = setInterval(ifDeath, 5000); //3600000 = 1 hour
+  function ifDeath () {
+    let guild = client.guilds.get(`324229387295653889`);
+    guild.channels.find(channel => channel.name === config.logChannel).send(`>>> Could not connect to the database. Will restart in an hour to check if I can connect again.\nWhile I am not connected to the database, my commands will be limited. Commands such as warn, warns, mute, and the level system will not work.`)
+    clearInterval(deathIf);
+  }
+  }
+  
+  
 
 
 client.on("ready", function () {
   client.user.setActivity(`Pirate Jane 2.0`);
   console.log("\nPirate Jane is ready to go!\n" + art)
-  var date = new Date(); //in case of crash I get the time of the crash
+  var date = new Date(); //in case of crash I get the approximate time it happened
   //cache all members from all guilds listed in the database
-startGuildLoop()
-function startGuildLoop() {
+   console.log('I started at ' + date)
+});
+
+
+let boomer = setInterval(GuildLoop, 6000);
+
+
+/*function startGuildLoop() {
   pool.getConnection(function(err, conn) {
     var sql = `SELECT * FROM guilds`;
+    
     conn.query(sql, function (err, results) {
         conn.release()
-        GuildLoop(results)
+          GuildLoop(results)
     })
+    
   })
-}
-function GuildLoop(results) {
-  if(!results[0]) {
-    return;
-  }
+}*/
+function GuildLoop() {
+  let sql = 'SELECT * FROM guilds'
+  let values = []
+  func.runQuery(sql, values, here)
+  function here (results) {
   var length = results.length
   var holder = 0;
   for (var i = 0; i < length; i++) {
@@ -38,18 +76,23 @@ function GuildLoop(results) {
       if(guild) {
         client.guilds.get(results[holder].id).fetchMembers()
         holder++
+        console.log(guild.id)
       } else {
         holder++
-  }}}
+  }
+  clearInterval(boomer)
+}
+}
+}
 
-  console.log('I started at ' + date)
-});
+
+
 client.on('guildDelete', guild => {
-  console.log(`I have left ${guild.name} at ${new Date()}`);
+  console.log(`I have left ${guild.name} at ${new Date()}`); 
 });
 
 client.on('guildCreate', guild => {
-  console.log(`I have Joined ${guild.name} at ${new Date()}`);
+  console.log(`I have Joined ${guild.name} at ${new Date()}`); //incase Jane somehow get's in a server..
 });
 
 //command handler
@@ -59,7 +102,7 @@ const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
   client.commands.set(command.name, command);
-  console.log('Command ' + command.name + ' [' + command.aliases + ']' + ' loaded!')
+  console.log('Command ' + command.name + ' [' + command.aliases + ']' + ' loaded!') //make sure commands load in correctly
 }
 
 client.on('message', message => {
@@ -71,13 +114,30 @@ client.on('message', message => {
   const command = client.commands.get(commandName) || client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
 
   if (!command) return;
+  let sql = 'SELECT * FROM LevelSystem WHERE id =?'
+  let values = [message.member.id]
+  if(shitself == false) {
+  func.runQuery(sql, values, getEverythingOnUser)
+  } else {
+    let userInfo = null;
+    getEverythingOnUser(userInfo)
+  }
+    //yes mysql db
 
-try {
-	command.execute(Discord, client, pool, config, message, args);
-} catch (error) {
-	console.error(error);
-	message.reply('<:turd:592017668777967616> Something went wrong');
-}
+    function getEverythingOnUser(userInfo) {
+
+      try {
+        command.execute(Discord, client, pool, config, message, args, userInfo, func, shitself);
+      } catch (error) {
+        console.error(error);
+        if(message.attachments) {
+          return;
+        }
+        message.reply('<:turd:592017668777967616> Something went wrong'); //if something goes not the way it's supposed to
+      }
+      }
+
+
 });
 
 //Daily cap reset 79200000 = 22 hours for testing purposes, 10 seconds = 10000
@@ -97,14 +157,16 @@ setInterval(autoUnmute, 15000);
 function autoUnmute() {
   pool.getConnection(function(err, conn) {
     var sql = `SELECT * FROM mutes`;
+    if(shitself == false) {
     conn.query(sql, function (err, results) {
         conn.release()
         unmuteLoop(results)
     })
+  }
   })
 }
 function unmuteLoop(results) {
-  if(!results[0]) {
+  if(!results) {
     return;
   }
 
@@ -166,10 +228,12 @@ setInterval(StartLBLoop, 3600000);
 function StartLBLoop() {
   pool.getConnection(function(err, conn) {
     var sql = `SELECT * FROM guilds`;
+    if(shitself == false) {
     conn.query(sql, function (err, results) {
         conn.release()
         LBLoop(results)
     })
+  }
   })
 }
 function LBLoop(results) {
@@ -210,7 +274,7 @@ function LBLoop(results) {
       holder = holder + 1
     }}
 
-//levels and discord invite remover and bad word filter (future)
+//everything done when a message is sent
 client.on("message", message => {
 
   //check for discord invites. If it's for the unturned official, leave it
@@ -221,6 +285,101 @@ client.on("message", message => {
       return;
   }
 
+  //Blacklisted words
+  if(shitself == false) {
+    if(message.author.bot) {
+      return;
+    }
+  pool.getConnection(function(err, conn) {
+    var sql = `SELECT * FROM blacklist`;
+    conn.query(sql, function (err, results) {
+      conn.release()
+      var length = results.length
+      var holder = 0;
+      let whitelist = ['shenanigans', 'spoon']
+      let msg = message.content.toLowerCase()
+      let re;
+            for (let i = 0; i < whitelist.length; i++) {
+              re = new RegExp(`${whitelist[i]}`, 'g')
+              msg = msg.replace(re, ' ')
+            
+          }
+      //console.log(msg)
+        
+      for (var i = 0; i < length; i++) {
+        
+        if(msg.includes(results[holder].word)) {
+
+          if(message.author.bot) {
+            return;
+          }
+          if(message.member.hasPermission('BAN_MEMBERS')) {
+            return;
+          }
+          message.delete()
+          //if in appeals, delete the message, but don't go mute them/warn them
+          if(message.channel.name == 'appeals') {
+            return;
+          }
+          pool.getConnection(function(err, conn) {
+            var badWord = results[holder].word;
+            var sql = `SELECT severity FROM blacklist WHERE word =?`;
+
+            conn.query(sql, [badWord], function (err, results2) {
+                conn.release()
+              if(results2[0].severity == '1') {
+                message.reply(`That kind of language is not allowed here.`)
+                .then(msg => {msg.delete(10000)})
+              } else if(results2[0].severity == '2') {
+                message.reply(`Bad words >:[ Don't use them or try to bypass the filter.`)
+                .then(msg => {msg.delete(10000)})
+              } else if(results2[0].severity == '3') {
+                message.channel.send(`That's over the line, bub. ` + message.author.tag + ` got a 30 minute mute.`)
+                const mutes = message.guild.channels.find(channel => channel.name === config.modLogs);
+                const muted = message.guild.roles.find(role => role.name === "Muted");
+
+                message.member.addRole(muted).catch(console.error);
+                
+                const embed = new Discord.RichEmbed()
+                embed.setTitle(`Auto Mute`)
+                embed.setColor(0xFFA500)
+                embed.setTimestamp()
+                embed.addField('User', message.author.tag + ' (' + message.author.id + ')', false)
+                embed.addField('Reason', 'Bad words.', false)
+                embed.addField('Channel', message.channel, false)
+                embed.addField('Muted for', '30 minutes', false)
+
+                mutes.send({embed});
+                message.author.send({embed}).catch(console.error);
+
+                var amExpire = Math.round((new Date()).getTime() / 1000 + 1800);
+
+                pool.getConnection(function(err, conn) {
+                  var sql = `INSERT INTO mutes (guild, id, time) VALUES (?, ?, ?);`;
+                  conn.query(sql,[message.guild.id, message.author.id, amExpire], function (err, results) {
+                  conn.release()
+                  })
+              })
+
+              }
+            })
+          })
+          return;
+        } else {
+          holder++
+        }
+      }
+    
+    })
+  
+})
+}
+//Reply when mentioned (Incase forgotten prefix)
+if(message.content.startsWith(client.user)) {
+  message.channel.send(`Hello. :wave: \nMy prefix is: \`` + prefix + `\``)
+}
+
+  //Level System begins here
   if(message.content.startsWith(prefix)) return; //ignore commands
   if(message.author.bot) return; //ignore bots
 
@@ -235,13 +394,15 @@ client.on("message", message => {
       return;
   }
 
+
   //ignored channels
-  if(message.channel.name == 'appeals' || message.channel.name == 'lobby' || message.channel.name == 'role-request') {
+  if(message.channel.name == 'appeals' || message.channel.name == 'lobby' || message.channel.name == 'role-request' || message.channel.name == 'voice-and-bot-commands') {
   return;
 }
 
   pool.getConnection(function(err, conn) {
     var sql = `select * from LevelSystem where id =?`;
+    if(shitself == false) {
     conn.query(sql, [userid], function (err, results) {
       conn.release()
         if(results.length == 0) {//if user doesn't exist, add them. It won't count for any of the boosts or xp.
@@ -252,6 +413,7 @@ client.on("message", message => {
 
       
     })
+  }
 })
 
 function xpFound(results) {
@@ -370,7 +532,7 @@ if(xp >= LevelUp) {
   if(message.member.roles.some(r=>["Survivor"].includes(r.name))) {
     // give lvl1 role, take away lvl0 role
     message.member.addRole(lvl1).catch(console.error);
-    message.member.removeRole(lvl0).catch(console.error);
+    //message.member.removeRole(lvl0).catch(console.error);
   } else {
     message.member.addRole(lvl1).catch(console.error);
   }
@@ -450,19 +612,28 @@ function addNewUser(id) {
 //logging\\
 //message delete
 client.on('messageDelete', async (message) => { 
+  
   if(message.author.bot) return;
+
+
   const logs = message.guild.channels.find(channel => channel.name === config.logChannel);
   const embed = new Discord.RichEmbed()
-  embed.setTitle(`Message Deleted in ${message.channel.name}`)
+  embed.setAuthor('Message Deleted - ' + message.author.tag, message.author.avatarURL)
   embed.setColor(0xEE7600)
   embed.setTimestamp()
-  if(message.content.length > 1024) {
-    embed.addField("Message", "Too long to display.", false)
+  if(message.content.length > 1000) {
+    embed.setDescription("**Message deleted in " + message.channel + "**\nToo long to display.", false)
   } else {
-    if(!message.content) return;
-  embed.addField("Message", message.content, false)
+    //if(!message.content) return;
+    embed.setDescription("**Message deleted in " + message.channel + "**\n" + message.content, false)
   }
-  embed.setFooter('Author: ' + message.author.tag + '(' + message.author.id + ')')
+  //console.log(message.attachments.first())
+  if(message.attachments.first()) {
+    embed.setImage(`${message.attachments.first().proxyURL}`)
+    //console.log(message.attachments.first().proxyURL)
+  }
+
+  embed.setFooter('Author ID: ' + message.author.id + ' | Message ID: ' + message.id)
   logs.send({embed});
 })
 //Role added/removed
@@ -483,7 +654,7 @@ client.on("guildMemberUpdate", function(oldMember, newMember){
     function addedRole(diff) {
     guild.channels.find(channel => channel.name === config.logChannel).send(
     new Discord.RichEmbed()
-    .setTitle('Role Added')
+    .setAuthor('Role added - ' + oldMember.user.tag, oldMember.user.avatarURL)
     .setColor(0x40e0d0)
     .setFooter(oldMember.id)
     .setTimestamp()
@@ -493,7 +664,7 @@ client.on("guildMemberUpdate", function(oldMember, newMember){
   function removeRole(diff) {
     guild.channels.find(channel => channel.name === config.logChannel).send(
     new Discord.RichEmbed()
-    .setTitle('Role Remove')
+    .setAuthor('Role removed - ' + oldMember.user.tag, oldMember.user.avatarURL)
     .setColor(0x40e0d0)
     .setFooter(oldMember.id)
     .setTimestamp()
@@ -532,28 +703,83 @@ client.on("guildMemberUpdate", function(oldMember, newMember){
 
 //join message
 client.on("guildMemberAdd", (member) => {
-  const guild = member.guild;
-    guild.channels.find(channel => channel.name === config.logChannel).send(
-      new Discord.RichEmbed()
-      .setTitle('Member Joined')
-      .setColor(0x3CB371)
-      .setFooter('Member ID: ' + member.id)
-      .setTimestamp()
-      .setDescription('Member ' + member.user.tag + ' has joined the server!')
-    )
+    const guild = member.guild;
+    pool.getConnection(function(err, conn) {
+      var sql = `SELECT * FROM mutes WHERE id=?`;
+      conn.query(sql,[member.id], function (err, resultsMute) {
+          conn.release()
+          if(!resultsMute[0]){
+            guild.channels.find(channel => channel.name === config.logChannel).send(
+              new Discord.RichEmbed()
+              .setTitle('Member Joined - ' + member.user.tag)
+              .setColor(0x3CB371)
+              .setFooter('Member ID: ' + member.id)
+              .setThumbnail(member.user.avatarURL)
+              .setTimestamp()
+              .setDescription('Member ' + member + ' has joined the server!')
+              .addField('Account created', member.user.createdAt , false)
+            )
+          } else {
+            const muted = guild.roles.find(role => role.name === "Muted");
+            member.addRole(muted).catch(console.error);
+            var timeMute = Number(resultsMute[0].time)
+            var ts = new Date(timeMute*1000);
+            var muteTime;
+            if(timeMute == '2545065496') {
+              muteTime = 'The end of time'
+            } else {
+              muteTime = ts.toDateString()
+            }
+            guild.channels.find(channel => channel.name === config.logChannel).send(
+              new Discord.RichEmbed()
+              .setTitle('Member Re-Joined - ' + member.user.tag)
+              .setColor(0x3CB371)
+              .setFooter('Member ID: ' + member.id)
+              .setTimestamp()
+              .setDescription('Member ' + member + ' Re-Joined the server while muted.')
+              .addField('User muted until', muteTime, false)
+              .addField('Account created on', member.user.createdAt , false)
+              )
+
+          }
+      })
+  })
+  pool.getConnection(function(err, conn) {
+    var sql = `SELECT * FROM blacklist`;
+    conn.query(sql, function (err, badWords) {
+      //console.log(badWords.length)
+      var nameSize = member.displayName.split(" ")
+
+      for (var i = 0; i < nameSize.length; i++) {
+        //console.log(nameSize[i])
+        for (var e = 0; e < badWords.length; e++) {
+          if(nameSize[i].includes(badWords[e].word)) {
+          member.setNickname("Bad Name")
+          member.send('Your nickname was changed in the Unturned Official discord server because it contained inappropriate words. \nAsk a moderator to change it if you wish.')
+          return;
+          }
+        }
+      }
+  })
+})
+
+
 });
+
 //leave message
 client.on("guildMemberRemove", (member) => {
   const guild = member.guild;
     guild.channels.find(channel => channel.name === config.logChannel).send(
       new Discord.RichEmbed()
-      .setTitle('Member Left')
+      .setTitle('Member Left - ' + member.user.tag)
       .setColor(0xDC143C)
       .setFooter('Member ID: ' + member.id)
+      .setThumbnail(member.user.avatarURL)
       .setTimestamp()
-      .setDescription('Member ' + member.user.tag + ' has left the server.')
+      .setDescription('Member ' + member + ' has left the server.')
     )
 });
+
 //message edited
   client.on("messageUpdate", function(oldMessage, newMessage){
     if(oldMessage.author.bot) return;
@@ -575,15 +801,46 @@ client.on("guildMemberRemove", (member) => {
 
   guild.channels.find(channel => channel.name === config.logChannel).send(
     new Discord.RichEmbed()
-    .setTitle('Message Edited - ' + oldMessage.member.user.tag)
     .setDescription(oldMessage.channel + `  [Jump to message](https://discordapp.com/channels/${oldMessage.guild.id}/${oldMessage.channel.id}/${oldMessage.id})`)
     .setColor(0x5f9ea0)
     .setFooter('ID: ' + oldMessage.id)
+    .setAuthor('Message Edited - ' + oldMessage.member.user.tag, oldMessage.member.user.avatarURL)
     .setTimestamp()
-    .addField('Before', ' ' + old, false)
-    .addField('After', ' ' + newm, false)
+    .addField('Before', '** **' + old, false)
+    .addField('After', '** **' + newm, false)
   )
 })
+
+//User nickname update
+client.on("guildMemberUpdate", function(oldM, newM){
+  
+  const guild = oldM.guild;
+  if(oldM.nickname === newM.nickname) return;
+  var oldNick = oldM.nickname;
+  var newNick = newM.nickname;
+  //old name
+  if(!oldNick){
+    oldNick = 'None'
+  }
+  //new name
+  if(!newNick) {
+    newNick = 'None'
+  }
+
+
+
+  guild.channels.find(channel => channel.name === config.logChannel).send(
+    new Discord.RichEmbed()
+    .setAuthor('Nickname Updated - ' + oldM.user.tag, oldM.user.avatarURL)
+    .setColor(0x5f9ea0)
+    .setFooter('Member ID: ' + oldM.id)
+    .setTimestamp()
+    .setDescription(oldM + ' had their nickname updated')
+    .addField('Before', oldNick, false)
+    .addField('After', newNick, false)
+  )
+});
+
 
 client.on("error", function(error){
   console.error(`client's WebSocket encountered a connection error: ${error}`);
@@ -598,34 +855,52 @@ reaction._emoji.name
 */
 //will work on it later
 //prevent spam by creating a check to check if the user has already flagged that, if they have, ignore it
-/*client.on("messageReactionAdd", function(reaction, user){
-      if(reaction._emoji.name == '🚩') {
-        if(user.tag == client.user.tag) {
-          return;
+let reactMsg = 655214342228410381 //msg
+client.on("messageReactionAdd", function(reaction, user){
+  let guild = reaction.message.guild
+  let mem = guild.members.get(user.id);
+  let survRole = guild.roles.find(role => role.name === "Survivor");
+  let confirm = 655216159582584876 //emoji
+      if(reaction._emoji.id == confirm) {
+        if(reaction.message.id == reactMsg) {
+          
+          mem.addRole(survRole).catch(console.error);
+          if(!mem.roles.some(r=>["Survivor", "Adept Survivor", "Seasoned Survivor", "Hardened Survivor", "Veteran Survivor"].includes(r.name))){
+            mem.send(`Welcome to **${guild.name}**!\n\n**By reacting to the message, you have accepted our Terms Of Service**`)
+          }
+          
         }
-        if(reaction.message.channel.name !== 'command-spam') {
-          return;
-        }
-        pool.getConnection(function(err, conn) {
-          var sql = `SELECT * FROM flags WHERE message=?`;
-          conn.query(sql, [reaction.message.id], function (err, results) {
-            if(!results[0]){
-              pool.getConnection(function(err, conn) {
-                var sql = `INSERT INTO flags (flagger, message) VALUES (?, ?)`;
-                conn.query(sql, [user.id, reaction.message.id], function (err, results) {                 
-                })
-            })
-            } else {
-              console.log(results.length)
-              pool.getConnection(function(err, conn) {
-                var sql = `INSERT INTO flags (flagger, message) VALUES (?, ?)`;
-                conn.query(sql, [user.id, reaction.message.id], function (err, results) {          
-                })
-            })
-            }
-          })
-      })
+
       }
-}); */
+}); 
+//ty anidiotsguide
+client.on('raw', packet => {
+  // react add/remove
+  if (!['MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE'].includes(packet.t)) return;
+  // channel
+  const channel = client.channels.get(packet.d.channel_id);
+  // check if cached
+  if (channel.messages.has(packet.d.message_id)) return;
+  // fetch message if not cached
+  channel.fetchMessage(packet.d.message_id).then(message => {
+      // Emojis can have identifiers of name:id format, so we have to account for that case as well
+      const emoji = packet.d.emoji.id ? `${packet.d.emoji.name}:${packet.d.emoji.id}` : packet.d.emoji.name;
+      // This gives us the reaction we need to emit the event properly, in top of the message object
+      const reaction = message.reactions.get(emoji);
+      // Adds the currently reacting user to the reaction's users collection.
+      if (reaction) reaction.users.set(packet.d.user_id, client.users.get(packet.d.user_id));
+      // Check which type of event it is before emitting
+      if (packet.t === 'MESSAGE_REACTION_ADD') {
+          client.emit('messageReactionAdd', reaction, client.users.get(packet.d.user_id));
+      }
+      if (packet.t === 'MESSAGE_REACTION_REMOVE') {
+          client.emit('messageReactionRemove', reaction, client.users.get(packet.d.user_id));
+      }
+  });
+});
+
+
+
+})
 
 client.login(config.token);

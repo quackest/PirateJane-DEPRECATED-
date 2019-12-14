@@ -2,13 +2,16 @@ module.exports = {
 	name: 'unmute',
     description: 'Unmutes a user',
     aliases: ['unmute'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
         if(!message.member.hasPermission("MANAGE_MESSAGES")) {
             message.react('592017668777967616')
             return;
         }
 
+        if(shitself == true) {
+            return message.channel.send(`Database is on the fritz. The command will not work until the database is back up.`)
+          }
 
         //set an event for when a user is unmuted via the member update. If they lost a role by the name of "Muted", delete them from the database.
         message.delete()

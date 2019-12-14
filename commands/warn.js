@@ -2,12 +2,16 @@ module.exports = {
 	name: 'warn',
     description: 'Warn a user for doing the nono',
     aliases: ['warn'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
     
         if(!message.member.hasPermission("MANAGE_MESSAGES")) {
             message.react('592017668777967616')
             return;
         }
+
+        if(shitself == true) {
+            return message.channel.send(`Database is on the fritz. The command will not work until the database is back up.`)
+          }
 
         message.delete()
         const userMention = message.mentions.users.first();
@@ -47,8 +51,9 @@ module.exports = {
         embed.addField('User', member.user.tag + ' (' + member.id + ')', false)
         embed.addField('Reason', reason, false)
         embed.addField('Moderator', message.author.tag + ' (' + message.author.id + ')', false)
-        embed.addField('Channel', message.channel, false)
+        embed.addField('Channel', '<#' + message.channel.id + '>', false)
         warn.send({embed});
+        member.send({embed}).catch(console.error);
         //send a channel message
         message.channel.send(message.author.tag + ' has warned ' + member.user.tag + ' for: ```' + reason + '```')
         updateUser(member, reason)

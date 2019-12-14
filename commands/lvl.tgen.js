@@ -2,15 +2,15 @@ module.exports = {
 	name: 'lvl.tgen',
     description: 'Generate a booster token',
     aliases: ['tgen'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
-    if(!message.member.roles.some(r=>["Moderation Team", "Administrator", "Moderator", "SDG", "Community Staff"].includes(r.name)) ) {
-        message.channel.send('You must be a staff member to use this command')
-        .then(msg => {
-            msg.delete(10000)
-        })
-        return;
-      }
+        if(!message.member.hasPermission("BAN_MEMBERS")) {
+            message.react('592017668777967616')
+            return;
+        }
+        if(shitself == true) {
+            return message.channel.send(`Database is on the fritz. The command will not work until the database is back up.`)
+          }
 
     var tier = args[0]
     var str = args.slice(1).join(' ');
@@ -75,25 +75,25 @@ module.exports = {
  
     if(tier == 'tier1') {
         var token = 't1' + generateToken(8)
-        message.channel.send('Your Tier 1 token has arrivied! ||' + token + '|| (Expiry date: ' + timeText + ')')
+        message.member.send('Your Tier 1 token has arrivied! ||' + token + '|| (Expiry date: ' + timeText + ')')
         var whatTier = 't1'
         makeToken(expireDate, whatTier, token)
 
     } else if(tier == 'tier2') {
         var token = 't2' + generateToken(8)
-        message.channel.send('Your Tier 2 token has arrivied! ||' + token + '|| (Expiry date: ' + timeText + ')')
+        message.member.send('Your Tier 2 token has arrivied! ||' + token + '|| (Expiry date: ' + timeText + ')')
         var whatTier = 't2'
         makeToken(expireDate, whatTier, token)
 
     } else if(tier == 'tier3') {
         var token = 't3' + generateToken(8)
-        message.channel.send('Your Tier 3 token has arrivied! ||' + token + '|| (Expiry date: ' + timeText + ')')
+        message.member.send('Your Tier 3 token has arrivied! ||' + token + '|| (Expiry date: ' + timeText + ')')
         var whatTier = 't3'
         makeToken(expireDate, whatTier, token)
 
     } else if(tier == 'tSDG'){
         var token = 'sdg' + generateToken(15)
-        message.channel.send('1 SDG Token coming right up! ||' + token + '|| (Expiry date: ' + timeText + ')')
+        message.member.send('1 SDG Token coming right up! ||' + token + '|| (Expiry date: ' + timeText + ')')
         var whatTier = 'SDG'
         makeToken(expireDate, whatTier, token)
 

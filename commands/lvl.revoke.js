@@ -2,63 +2,83 @@ module.exports = {
 	name: 'lvl.revoke',
     description: 'Revoke a users booster token',
     aliases: ['revoke'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
-    if(!message.member.roles.some(r=>["Moderation Team", "Administrator", "Moderator", "SDG", "Community Staff"].includes(r.name)) ) {
-        message.channel.send('You must be a staff member to use this command')
-        .then(msg => {
-            msg.delete(10000)
-        })
-        return;
-      }
+        if(!message.member.hasPermission("BAN_MEMBERS")) {
+            message.react('592017668777967616')
+            return;
+        }
+        if(shitself == true) {
+            return message.channel.send(`Database is on the fritz. The command will not work until the database is back up.`)
+          }
 
-    var id = args[0];
+        message.delete()
+        const userMention = message.mentions.users.first();
+        //mention
+        if (userMention) {
+          var member = message.guild.member(userMention);
+          //id
+        } else if (args[0]){
+            var userCheck = args[0];
+            var member = message.guild.member(userCheck)
+            if(!member) {
+              message.channel.send('Invalid user.')
+              return;
+            }
+        } else {
+            message.channel.send(':gear: Revoke a booster token for a user \nUsage: `' + config.prefix + 'lvl.revoke User` \nIt will revoke their token if they have one.')
+            return;
+        }
     
-    if(!id) {
-        message.channel.send(':gear: Revoke a booster token for a user \nUsage: `' + config.prefix + 'lvl.revoke {UserID}` \nIt will revoke their token if they have one.')
-    } else if(id.includes('<@')) {
-        message.channel.send('Please use the users ID.')
-        .then(msg => {
-            msg.delete(10000)
-        })
-    } else if(!id.match(/[0-9]/)) {
-        message.channel.send('Invalid ID')
-        .then(msg => {
-            msg.delete(10000)
-        })
-    } else { 
+        var id = member.id
         checkForToken(id)
-    }
+    
     
     function checkForToken(id) {
-        pool.getConnection(function(err, connection) {
+        pool.getConnection(function(err, conn) {
             var sql = `SELECT * FROM LevelSystem where id =?`;
     
-            connection.query(sql, [id], function (err, results) {
+            conn.query(sql, [id], function (err, results) {
                 if(results[0].boosttype == 'None') {
-                    connection.release()
+                    conn.release()
                     message.channel.send('This user does not have a booster token.')
                     .then(msg => {
                         msg.delete(10000)
                     })
                 } else {
-                    connection.release()
+                    conn.release()
                     beginRevoking(id)
-                    message.channel.send('Revoked <@' + id + '> ' + results[0].boosttype + ' token.')
-                    .then(msg => {
-                        msg.delete(15000)
-                    })
+                    var boostertype = results[0].boosttype
+                    var tokenTier;
+                    if(boostertype == 't1'){
+                        tokenTier = 'Tier 1'
+                      } else if(boostertype == 't2') {
+                        tokenTier = 'Tier 2'
+                      } else if(boostertype == 't3') {
+                        tokenTier = 'Tier 3'
+                      } else if(boostertype == 'SDG') {
+                        tokenTier = 'SDG'
+                      } else {
+                        tokenTier = 'None'
+                      }
+                    message.channel.send('Revoked ' + member + ' \'s ' + tokenTier + ' token.')
                 }
             })
         })
     }
     
     function beginRevoking(id) {
-        pool.getConnection(function(err, connection) {
+        pool.getConnection(function(err, conn) {
             var sql = `UPDATE LevelSystem SET boosttype = 'None' , boosttoken = '0' WHERE id =?`;
-                    connection.query(sql, [id], function (err, results) {
+            conn.query(sql, [id], function (err, results) {
                 })
-                connection.release()
+                conn.release()
             })
+            pool.getConnection(function(err, conn) {
+                var sql = `UPDATE boosterTokens SET isRevoked = 'true' WHERE redeemedBy =?`;
+                conn.query(sql, [id], function (err, results) {
+                    })
+                    conn.release()
+                })
     }
 }}

@@ -2,7 +2,7 @@ module.exports = {
 	name: 'leaderboard',
     description: 'Shows top 10',
     aliases: ['lb'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
     
 
     if(message.channel.name !== 'command-spam') {
@@ -14,6 +14,9 @@ module.exports = {
   }
 
 
+  if(shitself == true) {
+    return message.channel.send(`Database is on the fritz. The command will not work until the database is back up.`)
+  }
 
     pool.getConnection(function(err, conn) {
       var sql = `SELECT * FROM LevelSystem ORDER BY xp DESC LIMIT 15`;

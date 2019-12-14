@@ -2,7 +2,7 @@ module.exports = {
 	name: 'purge',
     description: 'Purges x amount of messages.',
     aliases: ['prune'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
         if(!message.member.hasPermission("MANAGE_MESSAGES")) {
             message.react('592017668777967616')

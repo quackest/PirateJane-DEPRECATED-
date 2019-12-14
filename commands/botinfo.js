@@ -2,7 +2,7 @@ module.exports = {
 	name: 'botinfo',
     description: 'Shows bot info',
     aliases: ['bi', 'binfo'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 const art = `       .___,   
     ___('v')___
     \`"-\._./-"'
@@ -16,6 +16,13 @@ const art = `       .___,
         }
         }
 
+        let boomer;
+
+        if(shitself == true) {
+            boomer = 'Down.'
+        } else if (shitself == false) {
+            boomer = 'Fine.'
+        }
 
         //total uptime
         var uptime = process.uptime();
@@ -35,5 +42,6 @@ const art = `       .___,
         .addField('Ping', Math.round(client.ping) + 'ms', false)
         .addField('Members', client.users.size, true)
         .setDescription('```' + art + '```')
+        .addField('Database Status', boomer, false)
         message.channel.send({embed});
 }}

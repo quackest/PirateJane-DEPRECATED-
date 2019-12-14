@@ -2,7 +2,7 @@ module.exports = {
 	name: 'userinfo',
     description: '~~Stalk someone~~ Let\'s you see information about a user',
     aliases: ['whois', 'ui'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
         if(!message.member.hasPermission("MANAGE_MESSAGES")) {
             message.react('592017668777967616')
@@ -34,7 +34,8 @@ module.exports = {
       var sortedmembers = message.guild.members.array().sort((a, b) => {
         a.joinedTimestamp - b.joinedTimestamp
     })
-    
+    var roleNumber = (Number(member.roles.size)- 1)
+    var roleList = member.roles.map(role => role).join(' ').replace('@everyone', '')
     var position = sortedmembers.indexOf(member)
     //console.log(member)
     var ts = new Date(member.user.createdTimestamp);
@@ -49,8 +50,19 @@ module.exports = {
     embed.addField('Registered', ts.toDateString(), true)
     embed.addField('Join Position', position , true)
     embed.addField('Join date', joined.toDateString(), true)
-    embed.addField('Roles [' + (Number(member.roles.size)- 1) + ']', member.roles.map(role => role).join(' ').replace('@everyone', ''), true)
-    embed.addField('Permissions', perms = checkPerms(member).join(', '), false)
+    if(!roleList) {
+    embed.addField('Roles [0]', 'None', true)
+    } else {
+    embed.addField('Roles [' + roleNumber + ']', roleList, true)  
+    }
+    
+    var permCheck = checkPerms(member)
+    if(!permCheck[0]){
+    embed.addField('Permissions', 'None', false)
+    } else {
+    embed.addField('Permissions', checkPerms(member).join(', '), false)
+    }
+
 
     message.channel.send({embed});
 

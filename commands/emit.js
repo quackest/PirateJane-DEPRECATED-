@@ -1,8 +1,8 @@
 module.exports = {
 	name: 'emit',
-    description: 'For testing purposes',
+    description: 'For testing purposes (emits an event. Ie. GuildMemberAdd)',
     aliases: ['emit'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
         if(!message.author.id == config.owner) {
             message.react('592017668777967616')

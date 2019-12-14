@@ -2,7 +2,7 @@ module.exports = {
 	name: 'addrole',
     description: 'Gives a user a role',
     aliases: ['giverole'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
         if(!message.member.hasPermission("MANAGE_MESSAGES")) {
             message.react('592017668777967616')
@@ -34,6 +34,10 @@ module.exports = {
           }
 
             var roleN = roleName.toLowerCase()
+            if(roleN == 'game support' || roleN == 'modding support' || roleN == 'bot boio' || roleN == 'supporter' || roleN == 'bots') {
+              message.channel.send(`I'm not allowed to give this role.`);
+              return;
+            }
             var role = message.guild.roles.find(role => role.name.toLowerCase() === roleN);
 
             if(!role) {
@@ -41,6 +45,10 @@ module.exports = {
                 return;
             }
 
+            if(!message.guild.me.hasPermission('MANAGE_ROLES')) {
+              message.channel.send('I don\'t have permissions to manage roles')
+              return;
+            }
 
             member.addRole(role).catch(console.error);
             message.channel.send(member.user.tag + ' was given the `' + role.name + '` Role')

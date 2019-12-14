@@ -2,28 +2,41 @@ module.exports = {
 	name: 'rulecode',
     description: 'Gets you out of hell.',
     aliases: ['rc'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
         
+        //if true, will proceed as natural, if false, will not work.
+        let toggle = true
+
+        if(toggle == false) {
+            return message.channel.send('Currently disabled. Perhaps a relic of the past?')
+        }
     //incase database is not available
     var hint = 'You shall also not share...';
     var answer = 'private messages';
+
+    if(shitself == true) {
+        
+        rulecode(hint, answer)
+
+
+      } else {
+
 
     pool.getConnection(function(err, conn) {
       var sql = `SELECT * FROM rulecode WHERE active = '1'`;
       conn.query(sql, function (err, results) {
           conn.release()
-          if(!results[0]) {
-            rulecode(hint, answer);
-          } else {
             hint = results[0].hint;
             answer = results[0].answer;
           rulecode(hint, answer);
-          }
+          
         
       })
   })
 
-    function rulecode(hint, answer) {
+}
+
+function rulecode(hint, answer) {
 
     var role = message.guild.roles.find(role => role.name === "Survivor");
     var response = args.slice(0).join(' ');
@@ -53,6 +66,5 @@ module.exports = {
         }
     }
   }
-
 
 }}

@@ -2,7 +2,7 @@ module.exports = {
 	name: 'help',
     description: 'Shows the list of commands',
     aliases: ['commands'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
 
         if(message.channel.name !== 'command-spam') {

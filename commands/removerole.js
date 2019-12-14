@@ -2,7 +2,7 @@ module.exports = {
 	name: 'removerole',
     description: 'Removes a users role',
     aliases: ['takerole'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
         if(!message.member.hasPermission("MANAGE_MESSAGES")) {
             message.react('592017668777967616')
@@ -34,6 +34,11 @@ module.exports = {
           }
 
             var roleN = roleName.toLowerCase()
+            var roleN = roleName.toLowerCase()
+            if(roleN == 'game support' || roleN == 'modding support' || roleN == 'bot boio' || roleN == 'supporter' || roleN == 'bots') {
+              message.channel.send(`I'm not allowed to take this role.`);
+              return;
+            }
             var role = message.guild.roles.find(role => role.name.toLowerCase() === roleN);
 
             if(!role) {

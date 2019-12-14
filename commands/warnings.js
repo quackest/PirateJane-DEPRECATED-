@@ -2,7 +2,7 @@ module.exports = {
 	name: 'warnings',
     description: 'Check your or another users warnings',
     aliases: ['warns'],
-	execute(Discord, client, pool, config, message, args) {
+	execute(Discord, client, pool, config, message, args, userInfo, func, shitself) {
 
     if(message.channel.name !== 'command-spam') {
       if(message.channel.name !== 'voice-and-bot-commands') {
@@ -11,7 +11,9 @@ module.exports = {
         }      
     }
   }
-
+  if(shitself == true) {
+    return message.channel.send(`Database is on the fritz. The command will not work until the database is back up.`)
+  }
 
 
 
