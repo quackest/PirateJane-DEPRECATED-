@@ -42,7 +42,8 @@ Nearly every, if not all commands provide a syntax if you do not input any argum
   - Private Command: Verification: `!verify` Works only in the Unturned Official discord server. You visit a website, sign in with steam, get a randomly generated token assigned to your steamID, you then go to the UO discord server and use the verify command followed by the token. This command is there for those who want to get special roles (Ie. Gold Upgrade (Own the Gold Upgrade DLC for unturned) role, or Experienced role (Get it by having 2.4k hours in unturned))
   - Removes discord invite links, but ignores the Unturned Official discord invite
 
-Note: It does require a specific database structure that I have not provided here, so if you want to try Jane out, you will need to message me to send it to you. (I'm lazy.)
+
+Note: The bot does require a specific database structure that I have not provided here, so if you want to try Jane out, you will need to message me to send it to you. (I'm lazy.)
 
 
 ## Contact? 
