@@ -1,5 +1,7 @@
+# This is an old project that is no longer maintained and has been abandoned. The bot is using an older Discord.JS library and needs to be updated to the latest one if you wish to use it.
+
 # Pirate Jane
-A bot for the [Unturned Official Discord server](http://discord.gg/unturned "Unturned Official")
+A bot for the Unturned Official Discord server(link removed)
 ######  I'm not very good at coding, so pls no make fun of me, k thx. Although any feedback would be nice.
 
 ## Info about the bot
@@ -43,12 +45,4 @@ Nearly every, if not all commands provide a syntax if you do not input any argum
   - Removes discord invite links, but ignores the Unturned Official discord invite
 
 
-Note: The bot does require a specific database structure that I have not provided here, so if you want to try Jane out, you will need to message me to send it to you. (I'm lazy.)
-
-
-## Contact? 
-My discord: Owl#6120 
-
-Steam: https://steamcommunity.com/id/ThatGuyOverThereWatchingMe/
-
-I'm quite active in the Unturned Official server, so if you have any questions, join that and ask me.
+Note: The bot does require a specific database structure that I have not provided here, so if you want to try Jane out, you will need to message me to send it to you.
